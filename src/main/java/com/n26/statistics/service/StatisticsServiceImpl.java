@@ -3,47 +3,37 @@ package com.n26.statistics.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
+import java.util.stream.IntStream;
 
 import com.n26.statistics.model.Statistics;
 import com.n26.statistics.model.Transactions;
-@Configuration
+
 public class StatisticsServiceImpl implements StatisticsService {
 
-	Instant instant;
-	long timeNow;
-	private final int INTERVAL = 60;
-	@Value ("${api-INTERVAL}")
-	int myInterval;
+	private final int INTERVAL_IN_SECS = 60;
 	private final int THOUSAND = 1000;
 
-	ConcurrentHashMap<Long, List<Transactions>> repo;
+	private ConcurrentHashMap<Long, List<Transactions>> transactionMap;
 
 	public StatisticsServiceImpl() {
-		repo = new ConcurrentHashMap<>();
+		transactionMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
-	public synchronized void addTransaction(Transactions transaction) {
+	public void addTransaction(Transactions transaction) {
 
 		List<Transactions> transactionList;
 		long timestampInSecs = transaction.getTimestamp() / THOUSAND;
-		if (repo.containsKey(timestampInSecs)) {
-			transactionList = repo.get(timestampInSecs);
-			transactionList.add(transaction);
-			repo.put(timestampInSecs, transactionList);
+		if (transactionMap.containsKey(timestampInSecs)) {
+			transactionList = transactionMap.get(timestampInSecs);
 		} else {
 			transactionList = new ArrayList<Transactions>();
-			transactionList.add(transaction);
-			repo.put(timestampInSecs, transactionList);
 		}
+		transactionList.add(transaction);
+		transactionMap.put(timestampInSecs, transactionList);
 	}
 
 	@Override
@@ -51,21 +41,12 @@ public class StatisticsServiceImpl implements StatisticsService {
 
 		long currentTimeInSeconds = Instant.now().getEpochSecond();
 		List<Transactions> transactionsInLast60Sec = new ArrayList<>();
-
-		for (long i = currentTimeInSeconds; i > currentTimeInSeconds - myInterval; i--) {
-
-			if (repo.get(i) != null) {
-				transactionsInLast60Sec.addAll(repo.get(i));
-
-			}
-		}
-
+		IntStream.range(0, INTERVAL_IN_SECS)
+		  .forEach(index -> {
+			  if (transactionMap.get(currentTimeInSeconds-index) != null) {
+					transactionsInLast60Sec.addAll(transactionMap.get(currentTimeInSeconds-index));
+			  }});
 		return calculateStatistics(transactionsInLast60Sec);
-	}
-
-	public List<Transactions> getTransactionList(long time) { // For Testing
-
-		return repo.get(time);
 	}
 
 	private Statistics calculateStatistics(List<Transactions> transactionsInLast60Sec) {

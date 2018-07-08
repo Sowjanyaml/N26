@@ -2,25 +2,24 @@ package com.n26.statistics.model;
 
 public class Statistics {
 
-	
-	double sum;
-    double avg;
-    double max;
-    double min;
-    long count;
+	private double sum;
+	private double avg;
+	private double max;
+	private double min;
+	private long count;
 
-    public Statistics() {
-    }
+	public Statistics() {
+	}
 
-    public Statistics(double sum, double avg, double max, double min, long count) {
-        this.sum = sum;
-        this.avg = avg;
-        this.max = max;
-        this.min = min;
-        this.count = count;
-    }
-    
-    public double getSum() {
+	public Statistics(double sum, double avg, double max, double min, long count) {
+		this.sum = sum;
+		this.avg = avg;
+		this.max = max;
+		this.min = min;
+		this.count = count;
+	}
+
+	public double getSum() {
 		return sum;
 	}
 
@@ -60,5 +59,4 @@ public class Statistics {
 		this.count = count;
 	}
 
-	
 }
